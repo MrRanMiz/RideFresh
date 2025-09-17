@@ -1,21 +1,31 @@
-#include <DHT.h>          // Include Adafruit DHT library for DHT11/DHT22 sensors
-#include <DHT_U.h>        // Include Adafruit Unified Sensor library (optional, provides standard sensor API)
-
-#define DHT11Pin 2        // Define digital pin 2 as the DHT11 data pin
-#define DHTType DHT11     // Define the sensor type as DHT11
-
-// OLED Libraries
-#include <Wire.h>                // Include I2C library for communication
-#include <Adafruit_GFX.h>        // Include core graphics library for OLED
-#include <Adafruit_SSD1306.h>    // Include SSD1306 OLED library
+#include "DHT.h"
+#define DHT11Pin 2
+#define DHTType DHT11
 
 
-#include "U8glib.h"
 
-U8GLIB_SSD1306_128X64 u8g(U8G_I2C_OPT_DEV_0 | U8G_I2C_OPT_NO_ACK | U8G_I2C_OPT_FAST); 
+//OLED
 
-// 'oLED Menu', 128x64px
-const unsigned char epd_bitmap_oLED_Menu [] PROGMEM = {
+#include   <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+DHT   HT(DHT11Pin,DHTType);
+float humi;
+float tempC;
+float tempF;
+
+int scene= 1; 
+int mode= 1; //0= COLD; 1= HOT
+
+//OLED   define
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT   64 // OLED display height, in pixels
+// Declaration for an SSD1306 display connected   to I2C (SDA, SCL pins)
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,   &Wire, -1);
+
+
+const unsigned char myBitMap [] PROGMEM = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
@@ -83,83 +93,25 @@ const unsigned char epd_bitmap_oLED_Menu [] PROGMEM = {
 };
 
 
-DHT HT(DHT11Pin, DHTType);       // Create DHT object
-float humi;                       // Variable to store humidity
-float tempC;                       // Variable to store temperature in Celsius
-float tempF;                       // Variable to store temperature in Fahrenheit
-int currentscene= 0; //*************************
-// OLED definitions 
-#define SCREEN_WIDTH 128           // OLED display width in pixels
-#define SCREEN_HEIGHT 64           // OLED display height in pixels
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);  // Initialize OLED with I2C, no reset pin
 
 void setup() {
+  Serial.begin(9600);
+  //For DHT11
   pinMode(4,INPUT_PULLUP);
   pinMode(7,INPUT_PULLUP);
 
-  Serial.begin(9600);             // Start serial communication at 9600 baud
-
-  // Initialize DHT11 sensor
-  HT.begin();
-
-  // Initialize OLED display
-  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // 0x3C is OLED I2C address
-    Serial.println(F("SSD1306 allocation failed"));  // Error message if OLED init fails
-    for (;;);                                       // Stop program if OLED not found
+   HT.begin();
+  //For OLED I2C
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))   { // Address 0x3D for 128x64
+    Serial.println(F("SSD1306 allocation failed"));
+     for(;;);
   }
-
-  display.display();                // Show default display (like splash screen)
-  delay(1000);                      // Wait 1 second
-  display.clearDisplay();           // Clear OLED buffer
-
-  u8g.setFont(u8g_font_tpssb);
-  u8g.setColorIndex(1);
+  display.display(); //Display logo
+  delay(1000); 
+   display.clearDisplay();
 }
 
-
-void loop() {
-  if (digitalRead(4)==0 && currentscene==0){
-    currentscene=1; //HOT MODE
-  }
-    else if (digitalRead(7)==0 && currentscene==0){
-    currentscene=2; //COLD MODE
-  }
-  delay(1000);                       // Wait 1 second between readings
-
-  // Read DHT11 sensor
-  humi = HT.readHumidity();          // Read humidity
-  tempC = HT.readTemperature();      // Read temperature in Celsius
-  tempF = HT.readTemperature(true);  // Read temperature in Fahrenheit
-
-  // Print values to Serial Monitor
-  Serial.print("%");
-  Serial.print(" Temperature:");
-  Serial.print(tempC, 1);            // Print Celsius temperature with 1 decimal
-  Serial.print("C   ~ ");
-  Serial.print(tempF, 1);            // Print Fahrenheit temperature with 1 decimal
-  Serial.println("F");
-
-
-  if (currentscene==1 || 2){
-    // Clear OLED buffer before drawing new data
-    display.clearDisplay();
-    // Draw header on OLED
-    oledDisplayHeader();
-    // Draw humidity and temperatures on OLED
-    //oledDisplay(3, 5, 28, humi, "%");     // Display humidity
-    oledDisplay(2, 70, 16, tempC, "C");   // Display temperature in Celsius
-    oledDisplay(2, 70, 44, tempF, "F");   // Display temperature in Fahrenheit
-    display.display();                     // Update OLED with drawn content
-  }else if (currentscene==0){
-    u8g.firstPage();
-  do {
-    u8g.drawBitmapP( 0, 0, 128/8, 64, epd_bitmap_oLED_Menu);
-  } while ( u8g.nextPage() );
-  }
-}
-
-// Function to display header on OLED
-void oledDisplayHeader() {
+void   oledDisplayHeader(){
   display.setTextSize(1);         // Set text size
   display.setTextColor(WHITE);    // Set text color
   display.setCursor(20, 12);        // Set cursor to top-left
@@ -168,35 +120,101 @@ void oledDisplayHeader() {
   display.print("Temperature");    // Print "Temperature" label
   display.setCursor(0,25);
   display.setTextSize(3);
-  display.print("COLD");
-
-}
-
-// Function to display a value with unit on OLED
-void oledDisplay(int size, int x, int y, float value, String unit) {
-  int charLen = 12;               // Approximate width of a character
-  int xo = x + charLen * 3.2;     // X coordinate for degree symbol
-  int xunit = x + charLen * 3.6;  // X coordinate for unit text
-  int xval = x;                    // Starting x coordinate for value
-
-  display.setTextSize(size);       // Set text size
-  display.setTextColor(WHITE);     // Set text color
-
-  if (unit == "%") {               // Special formatting for humidity
-    display.setCursor(x, y);
-    display.print(value, 0);       // Print integer value
-    display.print(unit);           // Print unit "%"
-  } else {                         // Formatting for temperature
-    if (value > 99) {              // Adjust x position if temperature > 99
-      xval = x;
-    } else {
-      xval = x + charLen;          // Slight shift for smaller numbers
-    }
-    display.setCursor(xval, y);    // Set cursor for temperature value
-    display.print(value, 0);       // Print integer temperature
-    display.drawCircle(xo, y + 2, 2, WHITE); // Draw small circle for degree symbol
-    display.setCursor(xunit, y);   // Set cursor for unit
-    display.print(unit);           // Print "C" or "F"
+  if (mode==0){
+      display.print("COLD");
   }
+  else if (mode==1){
+    display.print("HOT");
+  }
+  }
+
+void oledDisplay(int size, int x,int   y, float value, String unit){
+ int charLen=12;
+ int xo=x+charLen*3.2;
+   int xunit=x+charLen*3.6;
+ int xval = x; 
+ display.setTextSize(size);
+ display.setTextColor(WHITE);
+   
+ if (unit=="%"){
+   display.setCursor(x, y);
+   display.print(value,0);
+    display.print(unit);
+ } else {
+   if (value>99){
+    xval=x;
+   }   else {
+    xval=x+charLen;
+   }
+   display.setCursor(xval, y);
+   display.print(value,0);
+    display.drawCircle(xo, y+2, 2, WHITE);  // print degree symbols (  )
+   display.setCursor(xunit,   y);
+   display.print(unit);
+ }
+ 
 }
 
+void scene1(){ //Main Menu
+display.drawBitmap(0, 0, myBitMap, 128, 64, SSD1306_WHITE);
+
+  
+}
+
+void scene2(){ //Main Scene
+
+  tempC = HT.readTemperature();
+  tempF = HT.readTemperature(true);
+
+
+  oledDisplayHeader();
+  oledDisplay(2,70,16,tempC,"C");
+}
+
+void loop() {
+ delay(1000);
+
+
+/*
+   Serial.print("Humidity:");
+ Serial.print(humi,0);
+ Serial.print("%");
+   Serial.print(" Temperature:");
+ Serial.print(tempC,1);
+ Serial.print("C   ~ ");
+ Serial.print(tempF,1);
+ Serial.println("F");
+*/
+
+if (digitalRead(7)==0){
+  Serial.println("MDEFSGSG");
+  scene= 2;
+}
+
+Serial.println(digitalRead(7));
+
+ display.clearDisplay();
+ /*
+  oledDisplayHeader();
+  oledDisplay(3,5,28,humi,"%");
+  oledDisplay(2,70,16,tempC,"C");
+  oledDisplay(2,70,44,tempF,"F");
+*/
+
+
+  if (scene==1){
+    scene1();
+  }
+  else if (scene==2) {
+    scene2();
+  }else {
+    scene1();
+  }
+  
+ display.display(); 
+
+
+
+
+ 
+}
