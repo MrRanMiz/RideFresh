@@ -87,7 +87,8 @@ DHT HT(DHT11Pin, DHTType);       // Create DHT object
 float humi;                       // Variable to store humidity
 float tempC;                       // Variable to store temperature in Celsius
 float tempF;                       // Variable to store temperature in Fahrenheit
-int currentscene= 0; //*************************
+
+int currentscene= -1; //*************************
 // OLED definitions 
 #define SCREEN_WIDTH 128           // OLED display width in pixels
 #define SCREEN_HEIGHT 64           // OLED display height in pixels
@@ -104,7 +105,7 @@ void setup() {
 
   // Initialize OLED display
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // 0x3C is OLED I2C address
-    Serial.println(F("SSD1306 allocation failed"));  // Error message if OLED init fails
+    //Serial.println(F("SSD1306 allocation failed"));  // Error message if OLED init fails
     for (;;);                                       // Stop program if OLED not found
   }
 
@@ -118,11 +119,16 @@ void setup() {
 
 
 void loop() {
-  if (digitalRead(4)==0 && currentscene==0){
+  if (digitalRead(4)==1 && digitalRead(7)==1){
+    currentscene = 0;
+  }
+  else if (digitalRead(4)==0 && currentscene==0){
     currentscene=1; //HOT MODE
+ 
   }
     else if (digitalRead(7)==0 && currentscene==0){
     currentscene=2; //COLD MODE
+  
   }
   delay(1000);                       // Wait 1 second between readings
 
@@ -132,15 +138,23 @@ void loop() {
   tempF = HT.readTemperature(true);  // Read temperature in Fahrenheit
 
   // Print values to Serial Monitor
-  Serial.print("%");
+  /*Serial.print("%");
   Serial.print(" Temperature:");
   Serial.print(tempC, 1);            // Print Celsius temperature with 1 decimal
   Serial.print("C   ~ ");
   Serial.print(tempF, 1);            // Print Fahrenheit temperature with 1 decimal
   Serial.println("F");
+*/
+if (currentscene==1 || 2){
+  display.clearDisplay();
+  display.print("hdei");
+  }
+}
 
-
+/*
   if (currentscene==1 || 2){
+    Serial.println(digitalRead(4));
+    Serial.println(digitalRead(7));
     // Clear OLED buffer before drawing new data
     display.clearDisplay();
     // Draw header on OLED
@@ -199,4 +213,4 @@ void oledDisplay(int size, int x, int y, float value, String unit) {
     display.print(unit);           // Print "C" or "F"
   }
 }
-
+*/
