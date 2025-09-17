@@ -114,12 +114,12 @@ void setup() {
 void   oledDisplayHeader(){
   display.setTextSize(1);         // Set text size
   display.setTextColor(WHITE);    // Set text color
-  display.setCursor(20, 12);        // Set cursor to top-left
+  display.setCursor(0, 35);        // Set cursor to top-left
   display.print("Mode:");           // Print "Mode" label
-  display.setCursor(60, 0);       // Move cursor to the right
+  display.setCursor(0, 0);       // Move cursor to the right
   display.print("Temperature");    // Print "Temperature" label
-  display.setCursor(0,25);
-  display.setTextSize(3);
+  display.setCursor(0,47);
+  display.setTextSize(2);
   if (mode==0){
       display.print("COLD");
   }
@@ -133,7 +133,7 @@ void oledDisplay(int size, int x,int   y, float value, String unit){
  int xo=x+charLen*3.2;
    int xunit=x+charLen*3.6;
  int xval = x; 
- display.setTextSize(size);
+ display.setTextSize(2);
  display.setTextColor(WHITE);
    
  if (unit=="%"){
@@ -146,10 +146,17 @@ void oledDisplay(int size, int x,int   y, float value, String unit){
    }   else {
     xval=x+charLen;
    }
-   display.setCursor(xval, y);
+   /*
+   display.setCursor(0,12);
    display.print(value,0);
-    display.drawCircle(xo, y+2, 2, WHITE);  // print degree symbols (  )
+   display.drawCircle(xo, y+2, 2, WHITE);  // print degree symbols (  )
    display.setCursor(xunit,   y);
+   display.print(unit);
+   */
+
+   display.setCursor(0,12);
+   display.print(value,0);
+   display.print((char)247);
    display.print(unit);
  }
  
