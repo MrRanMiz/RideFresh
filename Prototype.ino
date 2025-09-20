@@ -5,8 +5,8 @@
 #define SCREEN_WIDTH 128     // OLED display width, in pixels
 #define SCREEN_HEIGHT 64     // OLED display height, in pixels
 #define OLED_RST_PIN -1      // Reset pin (-1 if not available)
-#define THRESHOLD_HOT=
-#define THRESHOLD_COLD= 
+#define THRESHOLD_HOT 45
+#define THRESHOLD_COLD 10
 
 //OLED
 #include   <Wire.h>
@@ -212,6 +212,8 @@ void setup() {
   //For DHT11
   pinMode(4,INPUT_PULLUP);
   pinMode(7,INPUT_PULLUP);
+  pinMode(8,OUTPUT); //BUZZER
+
 
    HT.begin();
   //For OLED I2C
@@ -281,6 +283,15 @@ display.drawBitmap(0, 0, myBitMap, 128, 64, SSD1306_WHITE);
   
 }
 
+void thresholdchecker(int threshold){
+  if (tempC < threshold){
+    Serial.println("HOTTT");
+    tone(8,20000);
+  }else{
+    Serial.println("OKS LANG");
+  }
+  }
+
 void scene2(){ //Main Scene
 
   tempC = HT.readTemperature();
@@ -294,8 +305,11 @@ void scene2(){ //Main Scene
     display.drawBitmap(80,34, coldicon, 30,30, WHITE);  }
   else if (mode==1){
     display.drawBitmap(80,34, hoticon, 30,30, WHITE);
+    thresholdchecker(THRESHOLD_HOT);
   }
 }
+
+
 
 void loop() {
 
@@ -349,6 +363,7 @@ Serial.println(digitalRead(4));
   }
   else if (scene==2) {
     scene2();
+
   }else {
     scene1();
   }
@@ -357,6 +372,8 @@ Serial.println(digitalRead(4));
 
  frame = (frame + 1) % FRAME_COUNT;
  delay(FRAME_DELAY);
+
+ 
 
 
 
