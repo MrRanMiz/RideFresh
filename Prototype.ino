@@ -327,7 +327,7 @@ Serial.println(digitalRead(4));
   display.drawBitmap(
     47,  // center X
     30, // center Y
-    flame[frame],
+    isHot ? flame[frame] : cool[frame],
 
     FRAME_WIDTH,
     FRAME_HEIGHT,
