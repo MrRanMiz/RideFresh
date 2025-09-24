@@ -221,6 +221,7 @@ void setup() {
      for(;;);
   }
   display.display(); //Display logo
+  digitalWrite(8, LOW);
   delay(1000); 
   display.clearDisplay();
 }
@@ -274,12 +275,27 @@ display.drawBitmap(0, 0, myBitMap, 128, 64, SSD1306_WHITE);
 }
 
 void thresholdchecker(int threshold){
-  if (tempC < threshold){
-    Serial.println("HOTTT");
-    tone(8,20000);
+  bool transitioning;
+  if (isHot){
+    if (tempC < threshold){
+      transitioning= true;
+    }else{
+      transitioning= false;
+    }
+
   }else{
-    Serial.println("OKS LANG");
+    if (tempC > threshold){
+      transitioning= true;
+    }else{
+      transitioning= false;
+    }
+  
   }
+  if (transitioning==false && isHot ? tempC < threshold: tempC > threshold){
+    digitalWrite(8, HIGH);
+  }else{
+    digitalWrite(8, LOW);
+    }
   }
 
 void scene2(){ //Main Scene
@@ -297,6 +313,7 @@ void scene2(){ //Main Scene
     display.drawBitmap(80,34, hoticon, 30,30, WHITE);
     thresholdchecker(THRESHOLD_HOT);
   }
+  thresholdchecker(isHot ? THRESHOLD_HOT: THRESHOLD_COLD);
 }
 
 
