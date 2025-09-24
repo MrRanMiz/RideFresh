@@ -18,6 +18,7 @@
 #define FRAME_HEIGHT (32)
 #define FRAME_COUNT (sizeof(flame) / sizeof(flame[0]))
 
+
 #define SCREEN_I2C_ADDR 0x3C // Try 0x3C first; 0x3D is less common
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -30,6 +31,8 @@ float tempF;
 
 int scene= 1; 
 int mode= 1; //0= COLD; 1= HOT
+bool isHot= true;
+
 
 //OLED   define
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -231,10 +234,10 @@ void   oledDisplayHeader(){
   display.print("Temperature");    // Print "Temperature" label
   display.setCursor(0,47);
   display.setTextSize(2);
-  if (mode==0){
+  if (isHot==false){
       display.print("COLD");
   }
-  else if (mode==1){
+  else if (isHot==true){
     display.print("HOT");
   }
   }
@@ -288,16 +291,16 @@ void scene2(){ //Main Scene
   oledDisplayHeader();
   oledDisplay(2,70,16,tempC,"C");
   display.drawBitmap(80,0, tempicon, 30,30, WHITE);
-  if (mode==0){
+  if (isHot==false){
     display.drawBitmap(80,34, coldicon, 30,30, WHITE);  }
-  else if (mode==1){
+  else if (isHot==true){
     display.drawBitmap(80,34, hoticon, 30,30, WHITE);
     thresholdchecker(THRESHOLD_HOT);
   }
 }
 
 void oledUpdate(){
-  
+
 }
 
 
@@ -309,12 +312,12 @@ void loop() {
 if (digitalRead(7)==0 && scene==1){
   Serial.println("MDEFSGSG");
   scene= 2;
-  mode= 1;
+  isHot= true;
 }
 
 if (digitalRead(4)==0 && scene==1){
   scene= 2;
-  mode= 0;
+  isHot= false;
 }
 
 Serial.println(digitalRead(4));
@@ -325,6 +328,7 @@ Serial.println(digitalRead(4));
     47,  // center X
     30, // center Y
     flame[frame],
+
     FRAME_WIDTH,
     FRAME_HEIGHT,
     SSD1306_WHITE
@@ -345,14 +349,6 @@ Serial.println(digitalRead(4));
 
  frame = (frame + 1) % FRAME_COUNT;
  delay(FRAME_DELAY);
-
- 
-
-
-
-
-
-
  
 }
 
