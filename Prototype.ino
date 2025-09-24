@@ -16,8 +16,8 @@
 #define FRAME_DELAY (42)
 #define FRAME_WIDTH (32)
 #define FRAME_HEIGHT (32)
-#define FRAME_COUNT (sizeof(flame) / sizeof(flame[0]))
-
+#define FRAME_COUNT (sizeof(isHot ? flame: cool) / sizeof(isHot ? flame[0]: cool[0]))
+int frame_count;
 
 #define SCREEN_I2C_ADDR 0x3C // Try 0x3C first; 0x3D is less common
 #define SCREEN_WIDTH 128
@@ -299,9 +299,6 @@ void scene2(){ //Main Scene
   }
 }
 
-void oledUpdate(){
-
-}
 
 
 void loop() {
