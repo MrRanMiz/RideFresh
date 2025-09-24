@@ -321,7 +321,13 @@ Serial.println(digitalRead(4));
 
  display.clearDisplay();
 
-  display.drawBitmap(
+
+  if (scene==1){
+    scene1();
+  }
+  else if (scene==2) {
+    scene2();
+    display.drawBitmap(
     47,  // center X
     30, // center Y
     isHot ? flame[frame] : cool[frame],
@@ -330,22 +336,12 @@ Serial.println(digitalRead(4));
     FRAME_HEIGHT,
     SSD1306_WHITE
   );
-
-
-  if (scene==1){
-    scene1();
   }
-  else if (scene==2) {
-    scene2();
 
-  }else {
-    scene1();
-  }
   
  display.display(); 
 
  frame = (frame + 1) % FRAME_COUNT;
  delay(FRAME_DELAY);
- 
 }
 
