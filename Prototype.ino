@@ -28,6 +28,7 @@ DHT   HT(DHT11Pin,DHTType);
 float humi;
 float tempC;
 float tempF;
+float custom_temp_value;
 
 int scene= 1; 
 int mode= 1; //0= COLD; 1= HOT
@@ -509,11 +510,9 @@ void oledDisplay(int size, int x,int   y, float value, String unit){
 void selector(){
   if (digitalRead(7)==0 && scene==1 && current_selection==1){
   current_selection= 2;
-  Serial.println("Nayeon");
 
   }else if (digitalRead(7)==0 && scene==1 && current_selection==2){
   current_selection= 1;
-  Serial.println("Jeongyeon");
 }
 }
 
@@ -578,20 +577,17 @@ void scene2(){ //Main Scene
   thresholdchecker(isHot ? THRESHOLD_HOT: THRESHOLD_COLD);
 }
 
+void custom_temp(){
+custom_temp_value= ((float)analogRead(A2)/1023.0)*50.0;
+}
 
 
 void loop() {
-
-Serial.println(analogRead(A2));
-
+custom_temp();
+Serial.println((int)custom_temp_value);
  static int frame = 0;
 
-if (digitalRead(7)==0 && scene==1 && current_selection==1){
-  current_selection= 2;
-
-}else if (digitalRead(7)==0 && scene==1 && current_selection==2){
-  current_selection= 1;
-}
+selector();
 
  display.clearDisplay();
 
