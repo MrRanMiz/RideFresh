@@ -507,22 +507,25 @@ void oledDisplay(int size, int x,int   y, float value, String unit){
 }
 
 void selector(){
-  if (digitalRead(4)==0 && current_selection==1 && scene==1){
-    current_selection= 2;
-  } else if (digitalRead(4)==0 && current_selection==2 && scene==1){
-    current_selection= 1;
-  }
-  Serial.println(current_selection);
+  if (digitalRead(7)==0 && scene==1 && current_selection==1){
+  current_selection= 2;
+  Serial.println("Nayeon");
+
+  }else if (digitalRead(7)==0 && scene==1 && current_selection==2){
+  current_selection= 1;
+  Serial.println("Jeongyeon");
+}
 }
 
 void scene1(){ //Main Menu
-//display.drawBitmap(0, 0, myBitMap, 128, 64, SSD1306_WHITE);
-//display.drawBitmap(0,0, myBitMap, 128, 64, SSD1306_WHITE);
-
 if (current_selection==1){
   display.drawBitmap(0,0, menu1, 128, 64, SSD1306_WHITE);
 }else if (current_selection==2){
   display.drawBitmap(0,0, menu2, 128, 64, SSD1306_WHITE);
+}
+
+if (digitalRead(4)==0){
+  scene=2;
 }
 
 
@@ -578,38 +581,16 @@ void scene2(){ //Main Scene
 
 
 void loop() {
-  Serial.println(current_selection);
+
+Serial.println(analogRead(A2));
 
  static int frame = 0;
-/*
-if (digitalRead(7)==0 && scene==1){
-  scene= 2;
-  isHot= true;
-}
-
-if (digitalRead(4)==0 && scene==1){
-  scene= 2;
-  isHot= false;
-}
-*/
-
-/*
-
-  if (digitalRead(4)==0 && current_selection==1 && scene==1){
-    current_selection= 2;
-  } else if (digitalRead(4)==0 && current_selection==2 && scene==1){
-    current_selection= 1;
-  }
-  Serial.println(current_selection);
-  */
 
 if (digitalRead(7)==0 && scene==1 && current_selection==1){
   current_selection= 2;
-  Serial.println("Nayeon");
 
 }else if (digitalRead(7)==0 && scene==1 && current_selection==2){
   current_selection= 1;
-  Serial.println("Jeongyeon");
 }
 
  display.clearDisplay();
