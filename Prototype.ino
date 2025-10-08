@@ -464,20 +464,19 @@ void setup() {
 }
 
 void   oledDisplayHeader(){
+  String temp_2print= String(int(custom_temp_value)) + String(" C");
   display.setTextSize(1);         // Set text size
   display.setTextColor(WHITE);    // Set text color
-  display.setCursor(0, 35);        // Set cursor to top-left
-  display.print("Mode:");           // Print "Mode" label
-  display.setCursor(0, 0);       // Move cursor to the right
-  display.print("Temperature");    // Print "Temperature" label
-  display.setCursor(0,47);
-  display.setTextSize(2);
-  if (isHot==false){
-      display.print("COLD");
-  }
-  else if (isHot==true){
-    display.print("HOT");
-  }
+  display.setCursor(10, 0);       // Move cursor to the right
+  display.print("Set your preferred");    // Print "Temperature" label
+  display.setCursor(30,10);
+  display.print("temperature");
+  display.setCursor(30,30);
+  display.setTextSize(3);
+  //oledDisplay(5,0,0,custom_temp_value,"C");
+  display.print(temp_2print);
+
+
   }
 
 void oledDisplay(int size, int x,int   y, float value, String unit){
@@ -523,7 +522,7 @@ if (current_selection==1){
   display.drawBitmap(0,0, menu2, 128, 64, SSD1306_WHITE);
 }
 
-if (digitalRead(4)==0){
+if (digitalRead(4)==0 && current_selection==1){
   scene=2;
 }
 
@@ -558,7 +557,6 @@ if (warn==true){
 
 
 
-
 void scene2(){ //Main Scene
 
   tempC = HT.readTemperature();
@@ -578,7 +576,15 @@ void scene2(){ //Main Scene
 }
 
 void custom_temp(){
-custom_temp_value= ((float)analogRead(A2)/1023.0)*50.0;
+  custom_temp_value= ((float)analogRead(A2)/1023.0)*50.0;
+  oledDisplayHeader();
+
+  
+
+
+
+
+
 }
 
 
@@ -596,6 +602,11 @@ selector();
     scene1();
   }
   else if (scene==2) {
+
+    custom_temp();
+
+
+    /*
     scene2();
     display.drawBitmap(
     47,  // center X
@@ -605,7 +616,7 @@ selector();
     FRAME_WIDTH,
     FRAME_HEIGHT,
     SSD1306_WHITE
-  );
+    */
   }
 
   
