@@ -506,6 +506,14 @@ void oledDisplay(int size, int x,int   y, float value, String unit){
  
 }
 
+void selector(){
+  if (digitalRead(4) && current_selection==1 && scene==1){
+    current_selection= 2;
+  } else if (digitalRead(4) && current_selection==2 && scene==1){
+    current_selection= 1;
+  }
+}
+
 void scene1(){ //Main Menu
 //display.drawBitmap(0, 0, myBitMap, 128, 64, SSD1306_WHITE);
 //display.drawBitmap(0,0, myBitMap, 128, 64, SSD1306_WHITE);
@@ -570,7 +578,7 @@ void scene2(){ //Main Scene
 void loop() {
 
  static int frame = 0;
-
+/*
 if (digitalRead(7)==0 && scene==1){
   scene= 2;
   isHot= true;
@@ -580,6 +588,7 @@ if (digitalRead(4)==0 && scene==1){
   scene= 2;
   isHot= false;
 }
+*/
 
  display.clearDisplay();
 
