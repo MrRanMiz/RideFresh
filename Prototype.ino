@@ -512,6 +512,7 @@ void selector(){
   } else if (digitalRead(4) && current_selection==2 && scene==1){
     current_selection= 1;
   }
+  Serial.println(current_selection);
 }
 
 void scene1(){ //Main Menu
@@ -523,6 +524,8 @@ if (current_selection==1){
 }else if (current_selection==2){
   display.drawBitmap(0,0, menu2, 128, 64, SSD1306_WHITE);
 }
+
+selector();
 
 }
 
