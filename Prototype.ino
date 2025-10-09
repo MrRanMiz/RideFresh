@@ -19,6 +19,8 @@
 #define FRAME_COUNT (sizeof(isHot ? flame: cool) / sizeof(isHot ? flame[0]: cool[0]))
 int frame_count;
 
+
+
 #define SCREEN_I2C_ADDR 0x3C // Try 0x3C first; 0x3D is less common
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -26,9 +28,10 @@ int frame_count;
 
 DHT   HT(DHT11Pin,DHTType);
 float humi;
-float tempC;
-float tempF;
+int tempC;
 float custom_temp_value;
+
+
 
 int scene= 1; 
 int mode= 1; //0= COLD; 1= HOT
@@ -36,6 +39,15 @@ int current_selection= 2;
 bool isHot= true;
 bool warn= false;
 bool transitioning= false;
+
+int estimated_time;
+int initial_temp;
+
+
+unsigned long countdownTime= 60000;
+unsigned long startTime= 0;
+bool countingDown= false;
+bool startCounting= false;
 
 //OLED   define
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -442,7 +454,6 @@ const unsigned char selection_indicator[] PROGMEM= {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-
 };
 
 void setup() {
@@ -463,6 +474,27 @@ void setup() {
   display.clearDisplay();
 }
 
+void countDownTimer(){
+  if (!countingDown && digitalRead(4)==0){
+    Serial.println("Hello");
+    startTime= millis();
+    countingDown= true;
+  }
+
+  if (countingDown){
+    unsigned long elapsed= millis()- startTime;
+    if (elapsed < countdownTime){
+      unsigned long remaining= (countdownTime-elapsed)/1000;
+      Serial.println("Time left: ");
+      Serial.println(remaining +1);
+    }else{
+      countingDown= false;
+      Serial.println("Countdown finished!");
+    }
+  }
+
+
+}
 void   oledDisplayHeader(){
   String temp_2print= String(int(custom_temp_value)) + String(" C");
   display.setTextSize(1);         // Set text size
@@ -525,6 +557,9 @@ if (current_selection==1){
 if (digitalRead(4)==0 && current_selection==1){
   scene=2;
 }
+else if (digitalRead(4)==0 && current_selection==2){
+  scene=3;
+}
 
 
 }
@@ -559,8 +594,6 @@ if (warn==true){
 
 void scene2(){ //Main Scene
 
-  tempC = HT.readTemperature();
-  tempF = HT.readTemperature(true);
 
 
   oledDisplayHeader();
@@ -578,8 +611,27 @@ void scene2(){ //Main Scene
 void custom_temp(){
   custom_temp_value= ((float)analogRead(A2)/1023.0)*50.0;
   oledDisplayHeader();
+}
 
-  
+void spoilage_monitoring(){
+  tempC = HT.readTemperature();
+
+  display.setTextSize(1);
+  display.setCursor(0,35);
+  display.print("Temperature");
+  display.setCursor(0,45);
+  display.setTextSize(2);
+  display.print(String(tempC));
+  display.setCursor(40,45);
+  display.print("C");
+
+  display.setTextSize(1);
+  display.setCursor(0,0);
+  display.print("Time");
+  display.setCursor(30,10);
+  display.setTextSize(2);
+  display.print("XX:XX");
+
 
 
 
@@ -587,23 +639,42 @@ void custom_temp(){
 
 }
 
+void time_estimation(){
+  if (initial_temp!=0 && initial_temp!= NULL){
+    if (initial_temp>=21 && initial_temp<=23){
+      estimated_time= 4;
+  }else if (initial_temp>23 && initial_temp<25){
+    estimated_time= 3;
+  }
+    else if (initial_temp>=25 && initial_temp <29) {
+      estimated_time= 2;
+    }else if (initial_temp>=30){
+      estimated_time= 1;
+
+  }
+}
+}
+
+
+
+
 
 void loop() {
 custom_temp();
-Serial.println((int)custom_temp_value);
- static int frame = 0;
+static int frame = 0;
 
 selector();
 
  display.clearDisplay();
 
-
+  countDownTimer();
   if (scene==1){
     scene1();
   }
   else if (scene==2) {
 
     custom_temp();
+
 
 
     /*
@@ -617,6 +688,8 @@ selector();
     FRAME_HEIGHT,
     SSD1306_WHITE
     */
+  }else if (scene==3){
+    spoilage_monitoring();
   }
 
   
