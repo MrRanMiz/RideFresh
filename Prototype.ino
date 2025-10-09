@@ -475,7 +475,7 @@ void setup() {
 }
 
 void countDownTimer(){
-  if (!countingDown && digitalRead(4)==0){
+  if (!countingDown){
     Serial.println("Hello");
     startTime= millis();
     countingDown= true;
@@ -632,6 +632,12 @@ void spoilage_monitoring(){
   display.setTextSize(2);
   display.print("XX:XX");
 
+  countDownTimer();
+
+
+
+  
+
 
 
 
@@ -667,7 +673,6 @@ selector();
 
  display.clearDisplay();
 
-  countDownTimer();
   if (scene==1){
     scene1();
   }
