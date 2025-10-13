@@ -882,15 +882,18 @@ void temp_calibration(){
 	}
 
 	if (digitalRead(4)==0){
-		Serial.println(chosen_temp);
 		chosen_temp= custom_temp_value;
-		scene= 3;
+		Serial.println(chosen_temp);
+
+		scene= 1;
 
 	}
 }
 
-
-
+void custom_temp(){
+	tempC = HT.readTemperature();
+  tempF = HT.readTemperature(true);
+}
 
 
 
@@ -907,22 +910,9 @@ selector();
   }
   else if (scene==2) {
     temp_calibration();
-
-
-    /*
-    scene2();
-    display.drawBitmap(
-    47,  // center X
-    30, // center Y
-    warn ? warning[frame] : (isHot ? flame[frame] : cool[frame]),
-
-    FRAME_WIDTH,
-    FRAME_HEIGHT,
-    SSD1306_WHITE
-    */
   }
   else if (scene==3){
-    scene2();
+    custom_temp();
   }
 
   
