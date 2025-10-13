@@ -824,9 +824,6 @@ if (warn==true){
 }
 
 
-
-
-
 void scene2(){ //Main Scene
 
   tempC = HT.readTemperature();
@@ -845,7 +842,7 @@ void scene2(){ //Main Scene
   thresholdchecker(isHot ? THRESHOLD_HOT: THRESHOLD_COLD);
 }
 
-void custom_temp(){
+void temp_calibration(){
   custom_temp_value= ((float)analogRead(A2)/1023.0)*50.0;
   oledDisplayHeader();
   display.drawBitmap(0,23, loaderBorder, 128, 64, SSD1306_WHITE);
@@ -887,10 +884,12 @@ void custom_temp(){
 	if (digitalRead(4)==0){
 		Serial.println(chosen_temp);
 		chosen_temp= custom_temp_value;
-		scene= 1;
+		scene= 3;
 
 	}
 }
+
+
 
 
 
@@ -907,8 +906,7 @@ selector();
     scene1();
   }
   else if (scene==2) {
-
-    custom_temp();
+    temp_calibration();
 
 
     /*
