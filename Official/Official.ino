@@ -58,6 +58,7 @@ unsigned int minutes;
 unsigned long referenceInitial = 0;
 const unsigned long interval = 60000; // 1 minute = 60,000 ms
 bool countdownFinished = false;
+bool countdownStarted= false;
 
 //OLED   define
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -691,37 +692,6 @@ void time_conversion(){
 
 }
 
-void countDownTimerMain() {
-  if (countdownFinished) return;
-
-  unsigned long currentMillis = millis();
-
-  if (currentMillis - referenceInitial >= interval) {
-    referenceInitial = currentMillis;
-
-    if (minutes > 0) {
-      minutes--;
-    } else {
-      if (hours > 0) {
-        hours--;
-        minutes = 59;
-      } else {
-        Serial.println("Countdown finished!");
-        countdownFinished = true;
-        return;
-      }
-    }
-
-    // Display current time
-    Serial.print("Time left: ");
-    if (hours < 10) Serial.print("0");
-    Serial.print(hours);
-    Serial.print(":");
-    if (minutes < 10) Serial.print("0");
-    Serial.println(minutes);
-  }
-}
-
 
 void loop() {
 custom_temp();
@@ -757,7 +727,7 @@ selector();
 		if (initial_temp!=0){
 			time_estimation();
 			time_conversion();
-			countDownTimerMain();
+			//countDownTimerMain();
 			//Serial.println(estimated_time);
 
 		}
