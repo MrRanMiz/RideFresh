@@ -41,11 +41,11 @@ bool warn= false;
 bool transitioning= false;
 
 bool finished= false;
-int estimated_time;
+unsigned long estimated_time;
 int initial_temp;
 
 
-unsigned long countdownTime= 60000;
+unsigned long countdownTime= 6000;
 unsigned long startTime= 0;
 bool countingDown= false;
 bool startCounting= false;
@@ -655,14 +655,14 @@ void spoilage_monitoring(){
 void time_estimation(){
   if (initial_temp!=0 && initial_temp!= NULL){
     if (initial_temp>=21 && initial_temp<=23){
-      estimated_time= 4;
+      estimated_time= 3600000;
   }else if (initial_temp>23 && initial_temp<25){
-    estimated_time= 3;
+    estimated_time=  10800000;
   }
     else if (initial_temp>=25 && initial_temp <29) {
-      estimated_time= 2;
+      estimated_time= 7200000;
     }else if (initial_temp>=30){
-      estimated_time= 1;
+      estimated_time= 3600000;
 
   }
 }
@@ -703,9 +703,14 @@ selector();
     */
   }else if (scene==3){
     spoilage_monitoring();
+		if (initial_temp!=0){
+			time_estimation();
+			Serial.println(estimated_time);
+
+		}
   }
 
-  Serial.println(initial_temp);
+  Serial.println(estimated_time);
 
   
  display.display(); 
