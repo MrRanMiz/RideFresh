@@ -56,7 +56,7 @@ unsigned int hours;
 unsigned int minutes;
 
 unsigned long referenceInitial = 0;
-const unsigned long interval = 60000; // 1 minute = 60,000 ms
+const unsigned long interval = 600; // 1 minute = 60,000 ms
 bool countdownFinished = false;
 bool countdownStarted= false;
 
@@ -470,6 +470,7 @@ const unsigned char selection_indicator[] PROGMEM= {
 void setup() {
   Serial.begin(9600);
   //For DHT11
+  startCountdown(1, 30); // start immediately
   pinMode(4,INPUT_PULLUP);
   pinMode(7,INPUT_PULLUP);
   pinMode(11,OUTPUT); //BUZZER
@@ -682,11 +683,52 @@ void time_conversion(){
 
 }
 
+void startCountdown(int h, int m) {
+  hours = h;
+  minutes = m;
+  countdownFinished = false;
+  countdownStarted = true;
+  referenceInitial = millis();
+  decrementTime();
+}
+
+void officialCountdown() {
+  if (!countdownStarted || countdownFinished) return;
+
+  unsigned long currentMillis = millis();
+  if (currentMillis - referenceInitial >= interval) {
+    referenceInitial += interval;
+    decrementTime();
+  }
+}
+
+void decrementTime() {
+  if (minutes > 0) {
+    minutes--;
+  } else {
+    if (hours > 0) {
+      hours--;
+      minutes = 59;
+    } else {
+      Serial.println("Countdown finished!");
+      countdownFinished = true;
+      countdownStarted = false;
+      return;
+    }
+  }
+    // Print current time
+  Serial.print("Time left: ");
+  if (hours < 10) Serial.print("0");
+  Serial.print(hours);
+  Serial.print(":");
+  if (minutes < 10) Serial.print("0");
+  Serial.println(minutes);
+}
 
 void loop() {
 custom_temp();
 static int frame = 0;
-
+officialCountdown();
 selector();
 
  display.clearDisplay();
@@ -707,7 +749,7 @@ selector();
 
 			
 			if (initial_minutes!=0 && initial_minutes!=NULL){
-				//HELLO
+				//Serial.println("Hello");
 			}
 
 
