@@ -50,6 +50,10 @@ unsigned long startTime= 0;
 bool countingDown= false;
 bool startCounting= false;
 
+unsigned long initial_minutes;
+unsigned int hours;
+unsigned int minutes;
+
 //OLED   define
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT   64 // OLED display height, in pixels
@@ -668,6 +672,18 @@ void time_estimation(){
 }
 }
 
+void time_conversion(){
+	initial_minutes= estimated_time/60000;
+	hours= initial_minutes/60;
+	minutes= initial_minutes%60;
+
+	Serial.println(hours);
+	Serial.println(minutes);
+
+}
+
+
+
 
 
 
@@ -705,12 +721,13 @@ selector();
     spoilage_monitoring();
 		if (initial_temp!=0){
 			time_estimation();
-			Serial.println(estimated_time);
+			time_conversion();
+			//Serial.println(estimated_time);
 
 		}
   }
 
-  Serial.println(estimated_time);
+  //Serial.println(estimated_time);
 
   
  display.display(); 
