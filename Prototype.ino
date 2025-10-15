@@ -39,6 +39,17 @@ bool isHot= true;
 bool warn= false;
 bool transitioning= false;
 
+bool start_already= false;
+bool done= false;
+
+bool countingDown= false;
+int startTime;
+
+
+int estimated_time;
+int initial_temp;
+
+
 //OLED   define
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT   64 // OLED display height, in pixels
@@ -246,6 +257,10 @@ const unsigned char loaderContent [] PROGMEM = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
+
+bool countdownActive = false;
+unsigned long countdownStart = 0;
+unsigned long countdownDuration = 0;
 
 const unsigned char loaderEnd [] PROGMEM = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
@@ -480,6 +495,17 @@ const byte PROGMEM warning[][128] = {
   {0,0,0,0,0,3,192,0,0,63,252,0,0,224,7,0,1,128,1,128,3,0,0,192,6,0,0,32,12,0,0,48,24,0,0,24,16,1,128,8,48,1,128,12,32,1,128,4,32,1,128,4,32,1,128,4,96,1,128,6,96,1,128,6,96,1,128,6,96,1,128,6,32,0,0,4,32,0,0,4,32,0,0,4,48,1,128,12,16,1,128,8,24,0,0,24,12,0,0,48,6,0,0,32,3,0,0,192,1,128,1,128,0,224,7,0,0,63,252,0,0,3,192,0,0,0,0,0}
 };
 
+const unsigned char smile[] PROGMEM= {
+	0x00, 0x3f, 0xfc, 0x00, 0x00, 0xff, 0xff, 0x00, 0x03, 0xff, 0xff, 0xc0, 0x07, 0xff, 0xff, 0xe0, 
+	0x0f, 0xff, 0xff, 0xf0, 0x1f, 0xff, 0xff, 0xf8, 0x3f, 0xff, 0xff, 0xfc, 0x3f, 0xff, 0xff, 0xfc, 
+	0x7f, 0xff, 0xff, 0xfe, 0x7f, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0x9f, 0xf9, 0xff, 
+	0xff, 0x8f, 0xf1, 0xff, 0xff, 0x9f, 0xf9, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
+	0xff, 0x1f, 0xf8, 0xff, 0xff, 0x00, 0x00, 0xff, 0x7f, 0x80, 0x01, 0xfe, 0x7f, 0xc0, 0x03, 0xfe, 
+	0x3f, 0xe0, 0x07, 0xfc, 0x3f, 0xf8, 0x1f, 0xfc, 0x1f, 0xff, 0xff, 0xf8, 0x0f, 0xff, 0xff, 0xf0, 
+	0x07, 0xff, 0xff, 0xe0, 0x03, 0xff, 0xff, 0xc0, 0x00, 0xff, 0xff, 0x00, 0x00, 0x3f, 0xfc, 0x00
+};
+
 const byte PROGMEM sand_time[] [128]= {
 	{0,0,0,0,15,255,255,240,8,0,0,16,8,0,0,16,15,255,255,240,1,0,0,128,1,0,0,128,1,0,0,128,1,0,0,128,1,0,0,128,1,128,1,128,1,128,1,128,0,192,3,0,0,96,6,0,0,48,12,0,0,28,56,0,0,28,48,0,0,48,12,0,0,96,6,0,0,192,3,0,1,129,129,0,1,135,225,128,1,143,240,128,1,31,248,128,1,31,248,128,1,63,252,128,1,63,252,128,15,255,255,240,8,0,0,16,8,0,0,16,15,255,255,240,0,0,0,0},
   {0,0,0,0,15,255,255,240,8,0,0,16,8,0,0,16,15,255,255,240,1,0,0,128,1,0,0,128,1,0,0,128,1,0,0,128,1,0,0,128,1,128,1,128,1,128,1,128,0,192,3,0,0,96,6,0,0,48,12,0,0,28,56,0,0,28,48,0,0,48,12,0,0,96,6,0,0,192,3,0,1,129,129,0,1,135,225,128,1,143,240,128,1,31,248,128,1,31,248,128,1,63,252,128,1,63,252,128,15,255,255,240,8,0,0,16,8,0,0,16,15,255,255,240,0,0,0,0},
@@ -610,10 +636,30 @@ void   oledDisplayHeader(){
   display.setTextSize(2);
   //oledDisplay(5,0,0,custom_temp_value,"C");
   display.print(temp_2print);
-
-
   }
 
+void countDownTimer(){
+  if (!countingDown && start_already==false && done==false){
+    //Serial.println("Hello");
+    startTime= millis();
+    countingDown= true;
+		start_already= true;
+  }
+	/*
+  if (countingDown && done==false){
+    unsigned long elapsed= millis()- startTime;
+    if (elapsed < countdownTime){
+      unsigned long remaining= (countdownTime-elapsed)/1000;
+      //Serial.println("Time left: ");
+      Serial.println(remaining +1);
+    }else{
+      countingDown= false;
+			done= true;
+      Serial.println("Countdown finished!");
+    }
+  }
+	*/
+}
 
 void selector(){
   if (digitalRead(7)==0 && scene==1 && current_selection==1){
@@ -633,6 +679,10 @@ if (current_selection==1){
 
 if (digitalRead(4)==0 && current_selection==1){
   scene=2;
+}
+else if (digitalRead(4)==0 && current_selection==2){
+	scene=3;
+	Serial.println("hello");
 }
 
 
@@ -680,7 +730,7 @@ void temp_calibration(){
 
 	if (digitalRead(4)==0){
 		chosen_temp= custom_temp_value;
-		Serial.println(chosen_temp);
+		//Serial.println(chosen_temp);
 
 		scene= 3;
 
@@ -689,21 +739,47 @@ void temp_calibration(){
 
 void custom_temp(){
 	tempC = HT.readTemperature();
-  temp_print= String(int(tempC)) + " C";
+  temp_print= String((int(tempC))) + " C";
+	int x=0;
 	display.setCursor(0,0);
+
 
 	display.setTextSize(1);
 	display.print("Time:");
 	display.setCursor(0,34);
 	display.print("Temperature:");
+	display.setCursor(80,34);
+	display.setCursor(30,14);
+	display.setTextSize(2);
+	/*
+	display.print("XX:XX");
+	display.setCursor(0,50);
+	display.print(temp_print);
+	*/
+	Serial.println(tempC);
+
+
+	//countDownTimer();
+	//display.drawBitmap(90,33,smile,128,64, SSD1306_WHITE);
+}
+
+void spoilage_mode(){
+	tempC = HT.readTemperature();
+  temp_print= String(int(tempC)) + " C";
+	int x=0;
+
+	display.setCursor(0,0);
+	display.setTextSize(1);
+	display.print("Time:");
+	display.setCursor(0,34);
+	display.print("Temperature:");
+	display.setCursor(80,34);
 	display.setCursor(30,14);
 	display.setTextSize(2);
 	display.print("XX:XX");
-	display.setCursor(0,48);
+	display.setCursor(0,50);
 	display.print(temp_print);
 }
-
-
 
 void loop() {
  static int frame = 0;
@@ -719,13 +795,13 @@ void loop() {
     temp_calibration();
   }
   else if (scene==3){
-		
     custom_temp();
-		display.drawBitmap(90,33,sand_time[frame],FRAME_WIDTH,FRAME_HEIGHT, SSD1306_WHITE);
-		
   }
-
+	else{
+		custom_temp();
+	}
   
+ //Serial.println(scene);
  display.display(); 
 
  frame = (frame + 1) % FRAME_COUNT;
