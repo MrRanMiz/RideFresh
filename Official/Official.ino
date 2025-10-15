@@ -496,8 +496,6 @@ void countDownTimer(){
     unsigned long elapsed= millis()- startTime;
     if (elapsed < countdownTime){
       unsigned long remaining= (countdownTime-elapsed)/1000;
-      //Serial.println("Time left: ");
-     // Serial.println(remaining +1);
     }else{
       countingDown= false;
       Serial.println("Countdown finished!");
@@ -525,7 +523,6 @@ void   oledDisplayHeader(){
   display.print("temperature");
   display.setCursor(30,30);
   display.setTextSize(3);
-  //oledDisplay(5,0,0,custom_temp_value,"C");
   display.print(temp_2print);
 
   
@@ -683,13 +680,6 @@ void time_conversion(){
 	hours= initial_minutes/60;
 	minutes= initial_minutes%60;
 
-	Serial.println(hours);
-	Serial.println(minutes);
-
-	if (initial_minutes!=0 && initial_minutes!=NULL){
-		//HELLO
-	}
-
 }
 
 
@@ -709,31 +699,20 @@ selector();
 
     custom_temp();
 
-
-
-    /*
-    scene2();
-    display.drawBitmap(
-    47,  // center X
-    30, // center Y
-    warn ? warning[frame] : (isHot ? flame[frame] : cool[frame]),
-
-    FRAME_WIDTH,
-    FRAME_HEIGHT,
-    SSD1306_WHITE
-    */
   }else if (scene==3){
     spoilage_monitoring();
 		if (initial_temp!=0){
 			time_estimation();
 			time_conversion();
-			//countDownTimerMain();
-			//Serial.println(estimated_time);
+
+			
+			if (initial_minutes!=0 && initial_minutes!=NULL){
+				//HELLO
+			}
+
 
 		}
   }
-
-  //Serial.println(estimated_time);
 
   
  display.display(); 
