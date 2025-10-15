@@ -21,6 +21,7 @@ int frame_count;
 
 
 
+
 #define SCREEN_I2C_ADDR 0x3C // Try 0x3C first; 0x3D is less common
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -53,6 +54,10 @@ bool startCounting= false;
 unsigned long initial_minutes;
 unsigned int hours;
 unsigned int minutes;
+
+unsigned long referenceInitial = 0;
+const unsigned long interval = 60000; // 1 minute = 60,000 ms
+bool countdownFinished = false;
 
 //OLED   define
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -680,12 +685,42 @@ void time_conversion(){
 	Serial.println(hours);
 	Serial.println(minutes);
 
+	if (initial_minutes!=0 && initial_minutes!=NULL){
+		//HELLO
+	}
+
 }
 
+void countDownTimerMain() {
+  if (countdownFinished) return;
 
+  unsigned long currentMillis = millis();
 
+  if (currentMillis - referenceInitial >= interval) {
+    referenceInitial = currentMillis;
 
+    if (minutes > 0) {
+      minutes--;
+    } else {
+      if (hours > 0) {
+        hours--;
+        minutes = 59;
+      } else {
+        Serial.println("Countdown finished!");
+        countdownFinished = true;
+        return;
+      }
+    }
 
+    // Display current time
+    Serial.print("Time left: ");
+    if (hours < 10) Serial.print("0");
+    Serial.print(hours);
+    Serial.print(":");
+    if (minutes < 10) Serial.print("0");
+    Serial.println(minutes);
+  }
+}
 
 
 void loop() {
@@ -722,6 +757,7 @@ selector();
 		if (initial_temp!=0){
 			time_estimation();
 			time_conversion();
+			countDownTimerMain();
 			//Serial.println(estimated_time);
 
 		}
