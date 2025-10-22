@@ -22,7 +22,7 @@ int tempC;
 float custom_temp_value;
 
 int temp;
-int scene = 2;
+int scene = 1;
 int mode = 1; // 0= COLD; 1= HOT
 int current_selection = 2;
 bool isHot = true;
@@ -58,6 +58,10 @@ bool statusRed;
 bool statusOrange;
 bool statusBlue;
 
+bool transitionActive= false;
+bool transitionFinished= false;
+unsigned long transitionStart= 0;
+const unsigned long transitionTime= 20;
 
 
 
@@ -731,7 +735,7 @@ const unsigned char selection_indicator[] PROGMEM= {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-
+// -------------------- Setup --------------------
 void setup() {
   Serial.begin(9600);
   HT.begin();
@@ -744,31 +748,56 @@ void setup() {
   display.clearDisplay();
   display.display();
 
-  // --- Calculate estimated time once at the start ---
-  tempC = HT.readTemperature();
-  Serial.print("Starting Temp: "); Serial.println(tempC);
-  estimated_time = estimateTime(tempC); // get estimated time in ms
-  timeConversion();                     // convert to hours/minutes
-  startCountdown(hours, minutes);       // start countdown
-	pinMode(9,OUTPUT); //WARNING
-}
+  // Start the transition period
+  transitionStart = millis();
+  transitionActive = true;
+  Serial.println("Transition period started...");
+
+	pinMode(9, OUTPUT);
+	pinMode(10, OUTPUT);
+	pinMode(11, OUTPUT);
+	}
+
+
 
 // -------------------- Loop --------------------
 void loop() {
-  if (scene == 1 && countdownStarted && !countdownFinished) {
-    officialCountdown();
-    displayScene1();
-  } else if (scene == 1 && countdownFinished) {
-    displayScene1(); // freeze final display
+  if (scene == 1) {
+    // ---------------- Transition Period ----------------
+
+    if (transitionActive && !transitionFinished) {
+      unsigned long elapsed = millis() - transitionStart;
+
+      if (elapsed >= transitionTime) {
+        transitionFinished = true;
+        transitionActive = false;
+        Serial.println("Transition finished!");
+				statusRed= false;
+
+        // After transition, read temp and start main countdown
+        tempC = HT.readTemperature();
+        estimated_time = estimateTime(tempC); // in ms
+        timeConversion();
+        startCountdown(hours, minutes);
+      } else {
+        displayTransition(); // show XX:XX instead of actual time
+				statusRed= true;
+      }
+    }
+
+    // ---------------- Main Countdown ----------------
+    if (countdownStarted && !countdownFinished) {
+      officialCountdown();
+      displayScene1();
+    } else if (countdownFinished) {
+      displayScene1(); // freeze final display
+    }
   }
-	statusRed= true;
 	ledHandling();
-  delay(100); // small delay for smoother OLED updates
+  delay(100); // small delay for smoother OLED
 }
 
 // -------------------- Functions --------------------
-
-// Return estimated time in ms based on temp
 unsigned long estimateTime(int temp) {
   if (temp >= 21 && temp <= 23) return 3600000;    // 1 hour
   else if (temp > 23 && temp < 25) return 10800000; // 3 hours
@@ -795,7 +824,7 @@ void startCountdown(int h, int m) {
 void officialCountdown() {
   unsigned long currentMillis = millis();
   if (currentMillis - referenceInitial >= interval) {
-    referenceInitial = currentMillis; // reset for next second
+    referenceInitial = currentMillis;
     decrementTime();
   }
 }
@@ -807,7 +836,6 @@ void decrementTime() {
     countdownFinished = true;
     countdownStarted = false;
     Serial.println("Countdown finished!");
-		timerfinished= true;
     return;
   }
 
@@ -836,6 +864,20 @@ void displayScene1() {
   display.print(":");
   if (minutes < 10) display.print("0");
   display.print(minutes);
+
+  display.display();
+}
+
+void displayTransition() {
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+
+  display.setCursor(0, 0);
+  display.print("Transition...");
+
+  display.setCursor(0, 30);
+  display.print("Time left: XX:XX");
 
   display.display();
 }
