@@ -1,76 +1,65 @@
 #include "DHT.h"
-#define DHT11Pin 2
-#define DHTType DHT11
-#define SCREEN_I2C_ADDR 0x3D // or 0x3C
-#define SCREEN_WIDTH 128     // OLED display width, in pixels
-#define SCREEN_HEIGHT 64     // OLED display height, in pixels
-#define OLED_RST_PIN -1      // Reset pin (-1 if not available)
-#define THRESHOLD_HOT 40
-#define THRESHOLD_COLD 25
-
-int chosen_temp;
-
-//OLED
-#include   <Wire.h>
+#include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-#define FRAME_DELAY (42)
-#define FRAME_WIDTH (32)
-#define FRAME_HEIGHT (32)
-#define FRAME_COUNT (sizeof(isHot ? flame: cool) / sizeof(isHot ? flame[0]: cool[0]))
-int frame_count;
-
-
-
-
-#define SCREEN_I2C_ADDR 0x3C // Try 0x3C first; 0x3D is less common
+// -------------------- Pin & Device Setup --------------------
+#define DHT11Pin 2
+#define DHTType DHT11
+#define SCREEN_I2C_ADDR 0x3C
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 #define OLED_RST_PIN -1
+#define THRESHOLD_HOT 40
+#define THRESHOLD_COLD 25
 
-DHT   HT(DHT11Pin,DHTType);
+DHT HT(DHT11Pin, DHTType);
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RST_PIN);
+
+// -------------------- Variables --------------------
 float humi;
 int tempC;
 float custom_temp_value;
 
-
 int temp;
-int scene= 1; 
-int mode= 1; //0= COLD; 1= HOT
-int current_selection= 2;
-bool isHot= true;
-bool warn= false;
-bool transitioning= false;
+int scene = 2;
+int mode = 1; // 0= COLD; 1= HOT
+int current_selection = 2;
+bool isHot = true;
+bool warn = false;
+bool transitioning = false;
 
-bool finished= false;
-unsigned long estimated_time;
+bool timerfinished= false;
+
+bool finished = false;
+unsigned long estimated_time; // in ms
 int initial_temp;
 
-
-unsigned long countdownTime= 6000;
-unsigned long startTime= 0;
-bool countingDown= false;
-bool startCounting= false;
+unsigned long countdownTime = 6000;
+unsigned long startTime = 0;
+bool countingDown = false;
+bool startCounting = false;
 
 unsigned long initial_minutes;
 unsigned int hours;
 unsigned int minutes;
 
 unsigned long referenceInitial = 0;
-const unsigned long interval = 6000; // 1 minute = 60,000 ms
+const unsigned long interval = 600; // 1 minute = 60,000 ms
 bool countdownFinished = false;
-bool countdownStarted= false;
-bool mainCounterStarted= false;
-bool timeUpdated= false;
+bool countdownStarted = false;
+bool mainCounterStarted = false;
+bool timeUpdated = false;
 
-bool tempSelected= false;
+bool tempSelected = false;
+int chosen_temp;
 
-//OLED   define
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT   64 // OLED display height, in pixels
-// Declaration for an SSD1306 display connected   to I2C (SDA, SCL pins)
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,   &Wire, -1);
+bool statusRed;
+bool statusOrange;
+bool statusBlue;
+
+
+
 
 
 const unsigned char myBitMap [] PROGMEM = {
@@ -742,358 +731,117 @@ const unsigned char selection_indicator[] PROGMEM= {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
+
 void setup() {
   Serial.begin(9600);
-  //For DHT11
-	pinMode(2, INPUT);
-  pinMode(3,OUTPUT);
-  pinMode(4,INPUT_PULLUP);
-  pinMode(7,INPUT_PULLUP);
-  pinMode(9,OUTPUT);
-  pinMode(10,OUTPUT);
-  pinMode(11,OUTPUT); //BUZZER
   HT.begin();
-  //For OLED I2C
-  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))   { // Address 0x3D for 128x64
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_I2C_ADDR)) {
     Serial.println(F("SSD1306 allocation failed"));
-     for(;;);
+    for (;;);
   }
-  display.display(); //Display logo
-  digitalWrite(8, LOW);
-  delay(1000); 
+
   display.clearDisplay();
-}
+  display.display();
 
-void countDownTimer(){
-  if (!countingDown && digitalRead(4)==0){
-    Serial.println("Hello");
-    startTime= millis();
-    countingDown= true;
-  }
-
-  if (countingDown){
-    unsigned long elapsed= millis()- startTime;
-    if (elapsed < countdownTime){
-      unsigned long remaining= (countdownTime-elapsed)/1000;
-    }else{
-      countingDown= false;
-      Serial.println("Countdown finished!");
-
-       if (!finished){
-        initial_temp= tempC;
-        finished= true;
-  }
-      
-      
-    }
-  }
-
-
-
-
-}
-void   oledDisplayHeader(){
-  String temp_2print= String(int(custom_temp_value)) + String(" C");
-  display.setTextSize(1);         // Set text size
-  display.setTextColor(WHITE);    // Set text color
-  display.setCursor(10, 0);       // Move cursor to the right
-  display.print("Set your preferred");    // Print "Temperature" label
-  display.setCursor(30,10);
-  display.print("temperature");
-  display.setCursor(30,30);
-  display.setTextSize(3);
-  display.print(temp_2print);
-
-  
-
-
-  }
-
-
-void temp_calibration(){
-  custom_temp_value= ((float)analogRead(A2)/1023.0)*50.0;
-  oledDisplayHeader();
-
-	if (custom_temp_value>17){
-		display.drawBitmap(-10,23, loaderContent,128,64, SSD1306_WHITE);
-	}
-	if (custom_temp_value>34){
-		display.drawBitmap(0,23, loaderContent,128,64, SSD1306_WHITE);
-	}
-	if (custom_temp_value>49){
-		display.drawBitmap(10,23, loaderContent,128,64, SSD1306_WHITE);
-	}
-
-	if (digitalRead(4)==0){
-		chosen_temp= custom_temp_value;
-		//Serial.println(chosen_temp);
-
-		scene= 3;
-
-	}
-}
-
-void oledDisplay(int size, int x,int   y, float value, String unit){
- int charLen=12;
- int xo=x+charLen*3.2;
-   int xunit=x+charLen*3.6;
- int xval = x; 
- display.setTextSize(2);
- display.setTextColor(WHITE);
-   
- if (unit=="%"){
-   display.setCursor(x, y);
-   display.print(value,0);
-    display.print(unit);
- } else {
-   if (value>99){
-    xval=x;
-   }   else {
-    xval=x+charLen;
-   }
-
-   display.setCursor(0,12);
-   display.print(value,0);
-   display.print((char)247);
-   display.print(unit);
- }
- 
-}
-
-void selector(){
-  if (digitalRead(7)==0 && scene==1 && current_selection==1){
-  current_selection= 2;
-
-  }else if (digitalRead(7)==0 && scene==1 && current_selection==2){
-  current_selection= 1;
-}
-}
-
-void scene1(){ //Main Menu
-if (current_selection==1){
-  display.drawBitmap(0,0, menu1, 128, 64, SSD1306_WHITE);
-}else if (current_selection==2){
-  display.drawBitmap(0,0, menu2, 128, 64, SSD1306_WHITE);
-}
-
-if (digitalRead(4)==0 && current_selection==1){
-  scene=2;
-}
-else if (digitalRead(4)==0 && current_selection==2){
-  scene=3;
-}
-
-
-}
-
-void thresholdchecker(int threshold){
-if (isHot){
-  if (tempC>threshold){
-    warn=false;
-  }else{
-    warn=true;
-  }
-}
-else if (isHot==false){
-  if (tempC<threshold){
-    warn=false;
-  }else{
-    warn=true;
-  }
-}
-
-if (warn==true){
-  digitalWrite(11,HIGH);
-}else{
-  digitalWrite(11,LOW);
-}
-
-}
-
-
-
-
-
-void scene2(){ //Main Scene
-
-
-
-  oledDisplayHeader();
-  oledDisplay(2,70,16,tempC,"C");
-  display.drawBitmap(80,0, tempicon, 30,30, WHITE);
-  if (isHot==false){
-    display.drawBitmap(80,34, coldicon, 30,30, WHITE);  }
-  else if (isHot==true){
-    display.drawBitmap(80,34, hoticon, 30,30, WHITE);
-    thresholdchecker(THRESHOLD_HOT);
-  }
-  thresholdchecker(isHot ? THRESHOLD_HOT: THRESHOLD_COLD);
-}
-
-void custom_temp(){
-  custom_temp_value= ((float)analogRead(A2)/1023.0)*50.0;
-  oledDisplayHeader();
-
-  if (digitalRead(4)==0){
-    if (!tempSelected){
-      
-      tempSelected= true;
-    }
-    if (tempSelected= true){
-
-    }
-  }
-  
-}
-
-void spoilage_monitoring(){
+  // --- Calculate estimated time once at the start ---
   tempC = HT.readTemperature();
-
-  display.setTextSize(1);
-  display.setCursor(0,35);
-  display.print("Temperature");
-  display.setCursor(0,45);
-  display.setTextSize(2);
-  display.print(String(tempC));
-  display.setCursor(40,45);
-  display.print("C");
-
-  display.setTextSize(1);
-  display.setCursor(0,0);
-  display.print("Time");
-  display.setCursor(30,10);
-  display.setTextSize(2);
-  display.print("XX:XX");
-
-
-  
-
-
-
-
+  Serial.print("Starting Temp: "); Serial.println(tempC);
+  estimated_time = estimateTime(tempC); // get estimated time in ms
+  timeConversion();                     // convert to hours/minutes
+  startCountdown(hours, minutes);       // start countdown
+	pinMode(9,OUTPUT); //WARNING
 }
 
-void time_estimation(){
-  if (!timeUpdated){
-  if (initial_temp!=0 && initial_temp!= NULL){
-		Serial.println("Arizona");
-    if (initial_temp>=21 && initial_temp<=23){
-      estimated_time= 3600000;
-			Serial.println("Brigs");
-  }else if (initial_temp>23 && initial_temp<25){
-    estimated_time=  10800000;
-		Serial.println("Xhihua");
+// -------------------- Loop --------------------
+void loop() {
+  if (scene == 1 && countdownStarted && !countdownFinished) {
+    officialCountdown();
+    displayScene1();
+  } else if (scene == 1 && countdownFinished) {
+    displayScene1(); // freeze final display
   }
-    else if (initial_temp>=25 && initial_temp <=29) {
-      estimated_time= 7200000;
-			Serial.println("Khianna");
-    }else if (initial_temp>=30){
-      estimated_time= 3600000;
-			Serial.println("Kitty");
-
-  }
-  timeUpdated= true;
-	Serial.println(estimated_time);
-}
-}
+	statusRed= true;
+	ledHandling();
+  delay(100); // small delay for smoother OLED updates
 }
 
-void time_conversion(){
-	initial_minutes= estimated_time/60000;
-	hours= initial_minutes/60;
-	minutes= initial_minutes%60;
+// -------------------- Functions --------------------
 
+// Return estimated time in ms based on temp
+unsigned long estimateTime(int temp) {
+  if (temp >= 21 && temp <= 23) return 3600000;    // 1 hour
+  else if (temp > 23 && temp < 25) return 10800000; // 3 hours
+  else if (temp >= 25 && temp <= 29) return 7200000; // 2 hours
+  else if (temp >= 30) return 3600000;              // 1 hour
+  else return 3600000; // default 1 hour
+}
+
+void timeConversion() {
+  unsigned long totalMinutes = estimated_time / 60000;
+  hours = totalMinutes / 60;
+  minutes = totalMinutes % 60;
 }
 
 void startCountdown(int h, int m) {
   hours = h;
   minutes = m;
-  countdownFinished = false;
   countdownStarted = true;
+  countdownFinished = false;
   referenceInitial = millis();
-  decrementTime();
+  Serial.println("Countdown started!");
 }
 
 void officialCountdown() {
-  if (!countdownStarted || countdownFinished) return;
-
   unsigned long currentMillis = millis();
   if (currentMillis - referenceInitial >= interval) {
-    referenceInitial += interval;
+    referenceInitial = currentMillis; // reset for next second
     decrementTime();
   }
 }
 
 void decrementTime() {
-  if (minutes > 0) {
-    minutes--;
-  } else {
-    if (hours > 0) {
-      hours--;
-      minutes = 59;
-    } else {
-      Serial.println("Countdown finished!");
-      countdownFinished = true;
-      countdownStarted = false;
-      return;
-    }
+  if (minutes > 0) minutes--;
+  else if (hours > 0) { hours--; minutes = 59; }
+  else {
+    countdownFinished = true;
+    countdownStarted = false;
+    Serial.println("Countdown finished!");
+		timerfinished= true;
+    return;
   }
-    // Print current time
-  
+
   Serial.print("Time left: ");
   if (hours < 10) Serial.print("0");
   Serial.print(hours);
   Serial.print(":");
   if (minutes < 10) Serial.print("0");
   Serial.println(minutes);
-  
 }
 
-void loop() {
+void displayScene1() {
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
 
+  display.setCursor(0, 0);
+  display.print("Temp: ");
+  display.print(tempC);
+  display.print("C");
 
-  if (scene==3){
-    //digitalWrite(9,HIGH);
-    digitalWrite(10,HIGH);
-   // digitalWrite(11,HIGH);
-  }
-custom_temp();
-static int frame = 0;
-officialCountdown();
-selector();
+  display.setCursor(0, 30);
+  display.print("Time left: ");
+  if (hours < 10) display.print("0");
+  display.print(hours);
+  display.print(":");
+  if (minutes < 10) display.print("0");
+  display.print(minutes);
 
- display.clearDisplay();
+  display.display();
+}
 
-  countDownTimer();
-  if (scene==1){
-    scene1();
-  }
-  else if (scene==2) {
-
-    custom_temp();
-
-  }else if (scene==3){
-    spoilage_monitoring();
-		if (initial_temp!=0){
-			time_estimation();
-			time_conversion();
-
-			
-			if (initial_minutes!=0 && initial_minutes!=NULL){
-        if (!mainCounterStarted){
-          startCountdown(1,30);
-          Serial.println("Yes");
-          mainCounterStarted= true;
-        }
-      
-				officialCountdown();
-			}
-		}
-  }
-
-  
- display.display(); 
-
- frame = (frame + 1) % FRAME_COUNT;
- delay(FRAME_DELAY);
+void ledHandling(){
+	digitalWrite(9,statusRed);
+	digitalWrite(10,statusOrange);
+	digitalWrite(11,statusBlue);
 }
